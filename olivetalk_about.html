@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4E5F32">
+<title>올리브톡 소개</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F6F1E4; --ink: #3A3423; --ink-soft: #6E6650;
+    --olive-deep: #4E5F32; --olive: #7A8C4E; --olive-light: #9CB06A;
+    --gold: #B8963E; --walnut: #8B5E3C; --card: #FFFDF8; --border: #E1D8BE;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow-x: hidden; }
+  body {
+    margin: 0; background: var(--cream); font-family: 'Noto Sans KR', sans-serif;
+    color: var(--ink); display: flex; justify-content: center; -webkit-font-smoothing: antialiased;
+  }
+  .app { width: 100%; max-width: 420px; min-height: 100dvh; display: flex; flex-direction: column;
+    background: linear-gradient(180deg, #FBF8EF 0%, var(--cream) 55%); }
+
+  .topbar { display: flex; align-items: center; gap: 12px; padding: 18px 20px 8px; }
+  .back-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--card); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; touch-action: manipulation; flex-shrink: 0; text-decoration: none; }
+  .topbar h1 { font-family: 'Gowun Batang', serif; font-size: 18px; margin: 0; color: var(--olive-deep); }
+
+  main { padding: 10px 22px 50px; flex: 1; }
+
+  .hero-illust { text-align: center; padding: 18px 0 6px; }
+  .hero-illust svg { width: 130px; height: auto; }
+  .hero-illust h2 { font-family: 'Gowun Batang', serif; font-size: 24px; color: var(--olive-deep); margin: 10px 0 6px; }
+  .hero-illust p { font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; margin: 0 auto; max-width: 300px; }
+
+  .story-list { margin-top: 26px; display: flex; flex-direction: column; gap: 16px; }
+  .story-block { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 18px; }
+  .story-block .num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+    border-radius: 50%; background: var(--olive-deep); color: #FBF8EF; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+  .story-block .tag { display: block; font-size: 15px; font-weight: 700; color: var(--olive-deep); margin-bottom: 8px;
+    font-family: 'Gowun Batang', serif; }
+  .story-block p { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--ink); }
+
+  .closing { margin-top: 26px; text-align: center; padding: 22px 18px; background: linear-gradient(135deg,#EEF2E2,#F6F1E4);
+    border: 1px solid var(--border); border-radius: 18px; }
+  .closing p { font-family: 'Gowun Batang', serif; font-size: 15.5px; line-height: 1.8; color: var(--olive-deep); margin: 0; }
+
+  .btn-back-home { display: block; text-align: center; margin-top: 24px; background: var(--olive-deep); color: #FBF8EF;
+    text-decoration: none; padding: 14px; border-radius: 999px; font-size: 14px; font-weight: 600; touch-action: manipulation; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <a href="olivetalk_home.html" class="back-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#4E5F32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <h1>올리브톡 소개</h1>
+  </div>
+
+  <main>
+    <div class="hero-illust">
+      <svg viewBox="0 0 400 420" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="238" cy="50" rx="22" ry="11" fill="#9CB06A" transform="rotate(-25 238 50)"/>
+        <ellipse cx="210" cy="45" rx="19" ry="9" fill="#B7CE8C" transform="rotate(15 210 45)"/>
+        <path d="M200 95 Q212 72 228 58" stroke="#6B5B3E" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <ellipse cx="200" cy="230" rx="98" ry="118" fill="#A9BE78"/>
+        <ellipse cx="163" cy="182" rx="26" ry="38" fill="#FFFFFF" opacity="0.25"/>
+        <circle cx="172" cy="228" r="8" fill="#3A3423"/>
+        <circle cx="228" cy="228" r="8" fill="#3A3423"/>
+        <path d="M180 258 Q200 270 220 258" stroke="#3A3423" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <ellipse cx="153" cy="248" rx="12" ry="7" fill="#D98B6B" opacity="0.35"/>
+        <ellipse cx="247" cy="248" rx="12" ry="7" fill="#D98B6B" opacity="0.35"/>
+      </svg>
+      <h2>올리브라는 이름에 담긴 이야기</h2>
+      <p>작은 열매 하나에도, 오래된 세 가지 이야기가 담겨 있어요.</p>
+    </div>
+
+    <div class="story-list">
+      <div class="story-block">
+        <span class="num">1</span>
+        <span class="tag">새로운 시작</span>
+        <p>큰 홍수 뒤, 비둘기가 물고 돌아온 건 올리브 잎이었어요. 다시 시작할 수 있다는 첫 희망의 표시였죠. (창세기 8장)</p>
+      </div>
+      <div class="story-block">
+        <span class="num">2</span>
+        <span class="tag">세워짐</span>
+        <p>옛 이스라엘에서는 올리브 기름을 머리에 부어 사람을 세웠어요. 지치고 낮아진 이에게 힘을 더하는 상징이에요.</p>
+      </div>
+      <div class="story-block">
+        <span class="num">3</span>
+        <span class="tag">고단함을 어루만지는 위로</span>
+        <p>'겟세마네'는 원래 올리브를 눌러 기름을 짜내는 틀이라는 뜻이에요. 가장 힘든 순간에도 곁을 지키신 이야기가 담긴 이름이죠.</p>
+      </div>
+    </div>
+
+    <div class="closing">
+      <p>올리브는 이 세 이야기를 따라,<br>힘든 날에도 조용히 곁에 있어주는<br>존재이고 싶어요.</p>
+    </div>
+
+    <a href="olivetalk_home.html" class="btn-back-home">홈으로 돌아가기</a>
+  </main>
+
+</div>
+</body>
+</html>
