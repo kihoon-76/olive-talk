@@ -269,6 +269,7 @@
   <div class="chat" id="chat"></div>
   <div class="disclaimer">프로토타입 데모 · 실제 서비스는 교단 검수·위기대응 체계가 추가됩니다</div>
 
+  <audio id="ttsAudio" style="display:none;"></audio>
   <form id="form">
     <button class="mic" type="button" id="micBtn" title="음성으로 말하기">🎤</button>
     <textarea id="input" placeholder="마음을 편하게 적어보세요..." rows="1"></textarea>
@@ -473,7 +474,8 @@ function pickFemaleKoreanVoice() {
   return preferred || korean[0] || null;
 }
 
-function speak(text, onEnd) {
+// 브라우저 내장 음성 — ElevenLabs 호출이 실패했을 때만 쓰는 예비용이에요.
+function speakBrowserFallback(text, onEnd) {
   if (!('speechSynthesis' in window) || !text) { if (onEnd) onEnd(); return; }
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
@@ -484,6 +486,39 @@ function speak(text, onEnd) {
   if (voice) utter.voice = voice;
   if (onEnd) utter.onend = onEnd;
   window.speechSynthesis.speak(utter);
+}
+
+// ElevenLabs로 자연스러운 음성을 만들어 재생해요. 실패하면 브라우저 음성으로 자동 대체돼요.
+const ttsAudioEl = document.getElementById('ttsAudio');
+async function speak(text, onEnd) {
+  if (!text) { if (onEnd) onEnd(); return; }
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const authToken = session ? session.access_token : SUPABASE_KEY;
+    const res = await fetch(SUPABASE_URL + '/functions/v1/olive-tts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + authToken,
+        'apikey': SUPABASE_KEY,
+      },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) throw new Error('TTS 응답 실패: ' + res.status);
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    ttsAudioEl.src = url;
+    ttsAudioEl.onended = () => { URL.revokeObjectURL(url); if (onEnd) onEnd(); };
+    ttsAudioEl.onerror = () => { URL.revokeObjectURL(url); speakBrowserFallback(text, onEnd); };
+    await ttsAudioEl.play().catch(() => {
+      // 자동재생이 막힌 경우(주로 첫 인사말) 등은 조용히 넘어가요 — 다음 상호작용부턴 정상 재생돼요.
+      if (onEnd) onEnd();
+    });
+  } catch (err) {
+    console.error('ElevenLabs 음성 실패, 브라우저 음성으로 대체:', err);
+    speakBrowserFallback(text, onEnd);
+  }
 }
 
 // 올리브의 채팅 답변을 읽어줄 때 쓰는 함수 — 웨이크워드 모드면 다 읽은 뒤 다시 대기 상태로 돌아가요.
