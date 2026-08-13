@@ -169,42 +169,33 @@
   }
   .voice-toggle.muted { opacity: 0.4; }
 
-  button.mic {
-    background: #fff; border: 1.5px solid var(--border); color: var(--ink);
-    border-radius: 13px; width: 46px; flex-shrink: 0; font-size: 18px; cursor: pointer;
-    touch-action: manipulation; min-height: 44px;
-  }
-  button.mic.listening {
-    background: #E9CFC2; border-color: var(--walnut);
-    animation: micPulse 1s ease-in-out infinite;
-  }
   @keyframes micPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(139,94,60,0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(139,94,60,0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(78,95,50,0.35); }
+    50% { box-shadow: 0 0 0 10px rgba(78,95,50,0); }
   }
 
   .wake-bar {
-    display: flex; flex-direction: column; gap: 4px;
-    padding: 8px 14px; border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 6px; align-items: center;
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
     background: rgba(251,248,239,0.85);
     flex-shrink: 0;
   }
-  .wake-mode-btn {
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    background: #fff; border: 1.5px solid var(--olive-light); color: var(--olive-deep);
-    border-radius: 999px; padding: 9px 14px; font-size: 13.5px; font-weight: 700; cursor: pointer;
-    font-family: 'Noto Sans KR', sans-serif; width: 100%; touch-action: manipulation; min-height: 40px;
+  .talk-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--olive-deep); color: #FBF8EF; border: none;
+    border-radius: 999px; padding: 16px 20px; font-size: 18px; font-weight: 700; cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif; width: 100%; touch-action: manipulation; min-height: 58px;
+    box-shadow: 0 4px 10px rgba(78,95,50,0.25);
   }
-  .wake-mode-btn.active {
-    background: var(--olive-deep); color: #FBF8EF; border-color: var(--olive-deep);
+  .talk-btn.listening {
+    background: var(--walnut);
+    animation: micPulse 1s ease-in-out infinite;
   }
-  .wake-mode-btn.listening {
-    animation: micPulse 1.2s ease-in-out infinite;
-  }
-  .wake-status { font-size: 12px; color: var(--gold); text-align: center; min-height: 16px; font-weight: 600; }
+  .talk-btn:disabled { background: #C9C0AC; box-shadow: none; }
+  .wake-status { font-size: 13.5px; color: var(--gold); text-align: center; min-height: 18px; font-weight: 700; }
   .wake-help {
-    font-size: 12px; color: var(--walnut); text-align: center; line-height: 1.4;
-    background: #FBF0EC; border-radius: 8px; padding: 6px 8px;
+    font-size: 13px; color: var(--walnut); text-align: center; line-height: 1.5;
+    background: #FBF0EC; border-radius: 8px; padding: 7px 10px;
   }
   .disclaimer {
     text-align: center;
@@ -261,9 +252,9 @@
   </header>
 
   <div class="wake-bar">
-    <button id="wakeModeBtn" type="button" class="wake-mode-btn">👂 "안녕 올리브"로 시작하기</button>
+    <button id="talkBtn" type="button" class="talk-btn">🎤 눌러서 말하기</button>
     <span class="wake-status" id="wakeStatus"></span>
-    <p class="wake-help" id="wakeHelp">🎤 버튼을 누르고 "허용"을 눌러주세요. 그다음 "안녕 올리브"라고 불러보세요.</p>
+    <p class="wake-help" id="wakeHelp">위 초록 버튼을 손가락으로 한 번 누르시고, 편하게 말씀해주세요.</p>
   </div>
 
   <div class="chat" id="chat"></div>
@@ -271,7 +262,6 @@
 
   <audio id="ttsAudio" style="display:none;"></audio>
   <form id="form">
-    <button class="mic" type="button" id="micBtn" title="음성으로 말하기">🎤</button>
     <textarea id="input" placeholder="마음을 편하게 적어보세요..." rows="1"></textarea>
     <button class="send" type="submit" id="sendBtn">보내기</button>
   </form>
@@ -406,8 +396,9 @@ function renderAiText(bubble, raw, isCrisis) {
   bubble.innerHTML = escapeHtml(body).replace(/\n/g, '<br>') +
     (verse ? `<div class="verse-tag">📖 ${escapeHtml(verse)}</div>` : '');
 
-  // 음성으로 읽을 때는 전화번호 안내 블록 이모지 등은 자연스럽게 생략하고, 본문 + 출처만 읽어요.
-  return verse ? `${body} 관련 말씀은 ${verse} 입니다.` : body;
+  // 음성으로 읽을 땐 "16:7" 같은 표기를 그대로 읽으면 어색해서 "16장 7절"로 풀어줘요.
+  const spokenVerse = verse.replace(/(\d+)\s*:\s*(\d+)/, '$1장 $2절');
+  return spokenVerse ? `${body} 관련 말씀은 ${spokenVerse} 입니다.` : body;
 }
 
 // initial greeting
@@ -415,12 +406,24 @@ const GREETING_TEXT = '안녕하세요, 저는 올리브예요. 오늘 마음이
 addRow('ai', '안녕하세요, 저는 올리브예요 🫒<br>오늘 마음이 어떠셨는지, 편하게 이야기해주시겠어요?');
 setTimeout(() => speakText(GREETING_TEXT), 400); // 음성 목록 로딩 시간을 살짝 기다려요
 
-// (테스트 기간: 로그인 요구를 잠시 꺼뒀어요. 필요해지면 ensureSession()을 다시 호출하면 돼요.)
+// --- 비용 관리: 대화는 5번 주고받기로 제한해요 ---
+const MAX_EXCHANGES = 5;
+let exchangeCount = 0;
+
+function showExchangeLimitReached() {
+  addRow('ai', '오늘은 여기까지 이야기 나눴어요. 함께해주셔서 고마워요 🙏<br>내일 다시 편하게 말씀해주세요.');
+  sendBtn.disabled = true;
+  talkBtn.disabled = true;
+  input.disabled = true;
+  input.placeholder = '오늘 대화는 여기까지예요';
+}
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const text = input.value.trim();
   if (!text) return;
+  if (exchangeCount >= MAX_EXCHANGES) { showExchangeLimitReached(); return; }
+
   addRow('user', escapeHtml(text).replace(/\n/g,'<br>'));
   input.value = '';
   sendBtn.disabled = true;
@@ -428,7 +431,7 @@ form.addEventListener('submit', async (e) => {
   const risk = detectRiskCategory(text);
 
   // 1차 필터: 불법/위험 정보 요청은 API 호출 없이 즉시, 항상 같은 문구로 거절해요.
-  // (일관된 거절 응답 요건 + 불필요한 API 비용 방지)
+  // (일관된 거절 응답 요건 + 불필요한 API 비용 방지 — 이 경우는 횟수에 안 세요)
   if (risk === 'illegal') {
     addRow('ai', escapeHtml(FIXED_REFUSAL));
     history.push({ role: 'user', content: text });
@@ -441,6 +444,7 @@ form.addEventListener('submit', async (e) => {
   const aiBubble = addRow('ai', '', true);
   try {
     const reply = await sendToClaude(text);
+    exchangeCount++;
     const spokenText = renderAiText(aiBubble, reply, risk === 'crisis');
     speakText(spokenText);
   } catch (err) {
@@ -448,6 +452,10 @@ form.addEventListener('submit', async (e) => {
   }
   sendBtn.disabled = false;
   chat.scrollTop = chat.scrollHeight;
+
+  if (exchangeCount >= MAX_EXCHANGES) {
+    setTimeout(showExchangeLimitReached, 600);
+  }
 });
 
 input.addEventListener('keydown', (e) => {
@@ -457,25 +465,20 @@ input.addEventListener('keydown', (e) => {
   }
 });
 
-// ============ 음성 기능 (브라우저 내장 API, 별도 비용 없음) ============
-const micBtn = document.getElementById('micBtn');
+// ============ 음성 기능 (브라우저 내장 인식 + ElevenLabs 음성) ============
+const talkBtn = document.getElementById('talkBtn');
 const voiceToggle = document.getElementById('voiceToggle');
-const wakeModeBtn = document.getElementById('wakeModeBtn');
 const wakeStatus = document.getElementById('wakeStatus');
 const wakeHelp = document.getElementById('wakeHelp');
 const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 let voiceEnabled = true;      // 올리브 답변을 음성으로 읽어줄지
-let wakeModeOn = false;       // "안녕 올리브" 웨이크워드 대기 모드 on/off
-let listeningState = 'idle';  // idle | wake | responding | capture
+let listeningState = 'idle';  // idle | capture
 let recognition = null;       // 마이크 권한 재요청을 막기 위해, 처음 한 번만 만들고 계속 재사용해요.
 let recognitionActive = false;
 
-const WAKE_PATTERNS = [/안녕\s*올리브/, /하이\s*올리브/, /헬로\s*올리브/, /올리브야/, /올리브\s*안녕/];
-
 if (!SpeechRecognitionAPI) {
-  micBtn.style.display = 'none';
-  wakeModeBtn.style.display = 'none';
+  talkBtn.style.display = 'none';
   wakeHelp.textContent = '이 브라우저는 음성 인식을 지원하지 않아요. 아래 입력창에 글씨로 적어주세요.';
 }
 
@@ -546,8 +549,8 @@ function stripEmojiForSpeech(text) {
 function speakText(text) {
   stopRecognitionSafely(); // 올리브가 말하는 동안엔 마이크를 잠깐 꺼서, 자기 목소리를 다시 듣지 않게 해요.
   const cleanText = stripEmojiForSpeech(text);
-  if (!voiceEnabled) { if (wakeModeOn) setListeningMode('wake'); return; }
-  speak(cleanText, () => { if (wakeModeOn) setListeningMode('wake'); });
+  if (!voiceEnabled) return;
+  speak(cleanText, null);
 }
 
 // --- 마이크 권한은 최초 1회만 — 인식 객체를 새로 만들지 않고 계속 재사용해요 ---
@@ -555,24 +558,13 @@ function getRecognition() {
   if (recognition) return recognition;
   recognition = new SpeechRecognitionAPI();
   recognition.lang = 'ko-KR';
+  recognition.continuous = false;
+  recognition.interimResults = false;
 
   recognition.onresult = (e) => {
     const lastResult = e.results[e.results.length - 1];
-    const transcript = lastResult[0].transcript;
-
-    if (listeningState === 'wake') {
-      if (WAKE_PATTERNS.some(p => p.test(transcript))) {
-        listeningState = 'responding';
-        wakeModeBtn.classList.remove('listening');
-        wakeStatus.textContent = '';
-        stopRecognitionSafely(); // "네, 말씀하세요"를 마이크가 다시 듣지 않도록 먼저 멈춰요.
-        speak('네, 말씀하세요', () => {
-          // stop 직후 바로 start하면 브라우저가 못 알아듣는 경우가 있어서, 살짝 여유를 둬요.
-          setTimeout(() => setListeningMode('capture'), 250);
-        });
-      }
-    } else if (listeningState === 'capture' && lastResult.isFinal) {
-      input.value = transcript;
+    if (lastResult.isFinal) {
+      input.value = lastResult[0].transcript;
       setListeningMode('idle');
       form.dispatchEvent(new Event('submit'));
     }
@@ -580,44 +572,28 @@ function getRecognition() {
 
   recognition.onerror = (e) => {
     if (e.error === 'not-allowed' || e.error === 'permission-denied') {
-      wakeHelp.style.display = 'block';
       wakeHelp.textContent = '마이크 권한이 꺼져있어요. 브라우저 설정에서 마이크 허용으로 바꿔주세요.';
-      wakeModeOn = false;
-      listeningState = 'idle';
-      wakeModeBtn.classList.remove('active', 'listening');
-      wakeModeBtn.textContent = '👂 "안녕 올리브"로 시작하기';
     }
-    // no-speech, network 같은 일시적 에러는 흔해서, onend에서 알아서 재시작하도록 둬요.
+    setListeningMode('idle');
   };
 
   recognition.onend = () => {
     recognitionActive = false;
-    // 대기 상태를 유지해야 하는데 인식이 멈췄으면, 같은 객체로 바로 다시 시작해요.
-    // (매번 새로 만들지 않아서 권한을 또 묻지 않아요.)
-    if (wakeModeOn && listeningState === 'wake') {
-      startRecognitionSafely('wake');
-    } else if (listeningState === 'capture') {
-      // 캡처 중 아무 말도 못 들었으면(무음 타임아웃 등), 다시 한 번 듣기 시도해요.
-      startRecognitionSafely('capture');
-    }
   };
 
   return recognition;
 }
 
-function startRecognitionSafely(mode, isRetry) {
+function startRecognitionSafely(isRetry) {
   const rec = getRecognition();
   if (recognitionActive) return;
-  // 웨이크 대기는 계속 듣고 있어야 하니 연속 모드로, 실제 말 캡처는 한 번만 확실하게 듣도록 분리해요.
-  rec.continuous = (mode === 'wake');
-  rec.interimResults = (mode === 'wake');
   try {
     rec.start();
     recognitionActive = true;
   } catch (err) {
     // stop 직후 곧바로 start하면 가끔 에러가 나요 — 한 번만 살짝 기다렸다가 재시도해요.
     if (!isRetry) {
-      setTimeout(() => startRecognitionSafely(mode, true), 350);
+      setTimeout(() => startRecognitionSafely(true), 350);
     }
   }
 }
@@ -628,48 +604,28 @@ function stopRecognitionSafely() {
   }
 }
 
-// listeningState를 바꾸고, 그에 맞는 화면 표시 + 인식 시작을 한 번에 처리해요.
 function setListeningMode(mode) {
   listeningState = mode;
-  if (mode === 'wake') {
-    wakeModeBtn.classList.add('listening');
-    micBtn.classList.remove('listening');
-    wakeStatus.textContent = '듣고 있어요...';
-    startRecognitionSafely('wake');
-  } else if (mode === 'capture') {
-    wakeModeBtn.classList.remove('listening');
-    micBtn.classList.add('listening');
-    wakeStatus.textContent = '지금 말씀하세요...';
-    startRecognitionSafely('capture');
-  } else { // idle
-    wakeModeBtn.classList.remove('listening');
-    micBtn.classList.remove('listening');
+  if (mode === 'capture') {
+    talkBtn.classList.add('listening');
+    talkBtn.textContent = '🎤 듣고 있어요...';
+    wakeStatus.textContent = '지금 말씀하세요';
+    startRecognitionSafely();
+  } else {
+    talkBtn.classList.remove('listening');
+    talkBtn.textContent = '🎤 눌러서 말하기';
     wakeStatus.textContent = '';
   }
 }
 
-// --- 버튼 이벤트 ---
-wakeModeBtn.addEventListener('click', () => {
-  wakeModeOn = !wakeModeOn;
-  wakeModeBtn.textContent = wakeModeOn ? '👂 대기 중 (끄려면 클릭)' : '👂 "안녕 올리브"로 시작하기';
-  wakeModeBtn.classList.toggle('active', wakeModeOn);
-  wakeHelp.style.display = wakeModeOn ? 'none' : 'block'; // 켜지면 안내문은 접어서 화면을 덜 복잡하게
-  if (wakeModeOn) {
-    setListeningMode('wake');
-  } else {
-    setListeningMode('idle');
-    stopRecognitionSafely();
-    window.speechSynthesis.cancel();
-  }
-});
-
-micBtn.addEventListener('click', () => {
+// --- 버튼 이벤트: 누르면 바로 듣기 시작 (별도 호출어 필요 없음) ---
+talkBtn.addEventListener('click', () => {
   if (listeningState === 'capture') {
     stopRecognitionSafely();
-    setListeningMode(wakeModeOn ? 'wake' : 'idle');
+    setListeningMode('idle');
     return;
   }
-  if (listeningState !== 'idle') return; // 웨이크워드 응답 중 등 다른 작업 중이면 무시
+  if (exchangeCount >= MAX_EXCHANGES) return; // 대화 횟수 다 쓰면 마이크도 막아요
   setListeningMode('capture');
 });
 
