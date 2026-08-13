@@ -210,10 +210,27 @@
     padding: 4px 20px 2px;
     flex-shrink: 0;
   }
+
+  .inapp-banner {
+    display: none; /* JS로 카카오톡 브라우저 감지되면 flex로 바뀜 */
+    flex-direction: column; gap: 8px;
+    background: #4E5F32; color: #FBF8EF;
+    padding: 12px 16px; text-align: center; flex-shrink: 0;
+  }
+  .inapp-banner p { margin: 0; font-size: 13.5px; line-height: 1.5; }
+  .inapp-banner button {
+    background: #FBF8EF; color: var(--olive-deep); border: none; border-radius: 999px;
+    padding: 10px 16px; font-size: 14px; font-weight: 700; cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif; touch-action: manipulation;
+  }
 </style>
 </head>
 <body>
 <div class="app">
+  <div class="inapp-banner" id="inappBanner">
+    <p>🎤 음성 기능은 카카오톡 브라우저에서 잘 안 될 수 있어요.<br>아래 버튼으로 <b>일반 브라우저</b>에서 열어주세요.</p>
+    <button id="openExternalBtn" type="button">🌐 다른 브라우저로 열기</button>
+  </div>
   <header>
     <svg class="avatar" viewBox="0 0 400 420" xmlns="http://www.w3.org/2000/svg">
       <path d="M200 95 Q212 72 228 58" stroke="#6B5B3E" stroke-width="8" fill="none" stroke-linecap="round"/>
@@ -257,6 +274,18 @@
 </div>
 
 <script>
+// 카카오톡 내장 브라우저 감지 — 음성 기능이 불안정해서, 일반 브라우저로 유도해요.
+(function() {
+  const isKakaoInApp = /KAKAOTALK/i.test(navigator.userAgent || '');
+  if (!isKakaoInApp) return;
+  const banner = document.getElementById('inappBanner');
+  banner.style.display = 'flex';
+  document.getElementById('openExternalBtn').addEventListener('click', () => {
+    // 카카오가 공식 제공하는 방식: 이 URL 스킴으로 보내면 기기 기본 브라우저로 열어줘요.
+    location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+  });
+})();
+
 const chat = document.getElementById('chat');
 const form = document.getElementById('form');
 const input = document.getElementById('input');
