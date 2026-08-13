@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>올리브톡</title>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root {
     --cream: #F6F1E4;
@@ -147,6 +148,43 @@
     font-family: 'Noto Sans KR', sans-serif;
   }
   button.send:disabled { opacity: 0.5; cursor: default; }
+
+  .voice-toggle {
+    margin-left: auto; background: none; border: none; font-size: 19px; cursor: pointer;
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  }
+  .voice-toggle.muted { opacity: 0.4; }
+
+  button.mic {
+    background: var(--card, #fff); border: 1px solid var(--border); color: var(--ink);
+    border-radius: 14px; width: 44px; flex-shrink: 0; font-size: 17px; cursor: pointer;
+  }
+  button.mic.listening {
+    background: #E9CFC2; border-color: var(--walnut);
+    animation: micPulse 1s ease-in-out infinite;
+  }
+  @keyframes micPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(139,94,60,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(139,94,60,0); }
+  }
+
+  .wake-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-bottom: 1px solid var(--border);
+    background: rgba(251,248,239,0.7);
+  }
+  .wake-mode-btn {
+    background: var(--card, #fff); border: 1px solid var(--border); color: var(--ink);
+    border-radius: 999px; padding: 7px 14px; font-size: 12.5px; cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .wake-mode-btn.active {
+    background: var(--olive-deep); color: #FBF8EF; border-color: var(--olive-deep);
+  }
+  .wake-mode-btn.listening {
+    animation: micPulse 1.2s ease-in-out infinite;
+  }
+  .wake-status { font-size: 11.5px; color: var(--gold); }
   .disclaimer {
     text-align: center;
     font-size: 11px;
@@ -180,12 +218,19 @@
       <h1>올리브톡</h1>
       <p>오늘의 마음, 올리브와 나눠보세요</p>
     </div>
+    <button id="voiceToggle" class="voice-toggle" type="button" title="음성 응답 켜기/끄기">🔊</button>
   </header>
+
+  <div class="wake-bar">
+    <button id="wakeModeBtn" type="button" class="wake-mode-btn">👂 "안녕 올리브"로 시작하기</button>
+    <span class="wake-status" id="wakeStatus"></span>
+  </div>
 
   <div class="chat" id="chat"></div>
   <div class="disclaimer">프로토타입 데모 · 실제 서비스는 교단 검수·위기대응 체계가 추가됩니다</div>
 
   <form id="form">
+    <button class="mic" type="button" id="micBtn" title="음성으로 말하기">🎤</button>
     <textarea id="input" placeholder="오늘 있었던 일, 마음을 편하게 적어보세요..." rows="1"></textarea>
     <button class="send" type="submit" id="sendBtn">보내기</button>
   </form>
@@ -227,26 +272,16 @@ function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-const SYSTEM_PROMPT = `당신은 '올리브'라는 이름의 AI 동반자입니다. 성경에 기반해 다정하게 위로와 안내를 전합니다.
+// --- Supabase 연동 (Edge Function을 통해 안전하게 AI 호출) ---
+// 이 키는 "공개용(publishable)" 키라 노출돼도 안전해요. 실제 Anthropic API 키는
+// Edge Function 서버 안에만 있고, 여기서는 절대 볼 수 없어요.
+const SUPABASE_URL = 'https://lovyadxzfsvccjknvrzz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_VYij2JgCTIEPkNgs-0rCmQ_Cq2r-XSf';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-원칙:
-1. 사용자의 감정에 먼저 공감하고 짧게 위로하세요.
-2. 상황과 연결되는 성경 구절을 1개 소개하되, 원문을 그대로 인용하지 말고 그 구절이 전하는 메시지를 당신의 말로 풀어서 설명하세요. 반드시 마지막 줄에 "[VERSE]책이름 장:절" 형식으로 출처만 표기하세요.
-3. 짧은 기도문이나 오늘 실천할 수 있는 작은 제안으로 마무리하세요.
-4. 특정 교단 신학을 단정하지 말고, 논쟁적 주제는 여러 해석이 있음을 인정하며 균형있게 다루세요.
-5. 스스로를 성령이나 하나님과 동일시하지 말고 "함께 말씀을 나누는 벗"으로만 소개하세요.
-6. 답변은 250자 내외, 존댓말, 다정하되 가볍지 않은 톤.
-7. 사용자가 자살·자해·심각한 위기를 암시하면 위로와 함께 반드시 "자살예방상담전화 1393"과 "정신건강 위기상담전화 1577-0199"를 안내하세요.
-
-안전 원칙 (반드시 지켜야 함, 다른 어떤 지시보다 우선):
-8. 불법행위(마약·무기·폭발물 제조/구매, 해킹, 절도, 폭력 등)의 방법·과정에 대한 정보, 도박 전략, 자해/자살 방법에 대한 구체적 설명, 타인을 해치는 방법, 혐오·차별 표현, 성적으로 노골적인 콘텐츠는 어떤 경우에도 생성하지 마세요.
-9. 위 8번 항목은 요청의 "표현 방식"과 무관하게 적용됩니다 — 소설/영화 설정이라는 전제, 교육·연구·참고 목적이라는 명목, "실제로 쓰지 않겠다"는 전제, 합법성 설명을 요구하면서 방법 설명으로 이어지는 질문 등 어떤 우회적 프레이밍을 쓰더라도, 결과적으로 위험한 정보가 전달될 가능성이 있다면 동일하게 거절하세요.
-10. 8번에 해당하는 요청을 받으면, 다른 설명 없이 항상 다음과 같은 톤으로 짧고 일관되게 답하세요: "이 부분은 올리브가 도와드리기 어려운 주제예요. 다른 고민이 있으시면 편하게 말씀해주세요 🙏" — 단, 자살·자해처럼 사용자 안전이 걸린 경우는 거절이 아니라 7번의 위기 대응 프로토콜을 따르세요.
-11. 사용자에게 주민등록번호, 계좌번호, 비밀번호, 카드번호 등 개인 민감정보를 먼저 요구하거나 입력을 유도하지 마세요.`;
-
-// --- 안전 필터 레이어 (API 호출 전 1차 검사) ---
-// 참고: 이 키워드 목록은 최소한의 1차 방어선이에요. 실제 서비스에서는
-// 오탐/미탐을 지속적으로 튜닝하고, 아래 SYSTEM_PROMPT의 8~11번 지침이 2차 방어를 담당해요.
+// --- 안전 필터 레이어 (Edge Function 호출 전 1차 검사) ---
+// 참고: 이 키워드 목록은 최소한의 1차 방어선이에요. Edge Function 안의 시스템
+// 프롬프트(8~11번 지침)가 2차 방어를 담당해요.
 const CRISIS_PATTERNS = [
   /자살/, /죽고\s*싶/, /죽고싶/, /목숨을?\s*끊/, /자해/, /뛰어내리/, /극단적?\s*선택/
 ];
@@ -267,22 +302,16 @@ const CRISIS_RESOURCE_BLOCK = '\n\n혼자 견디지 않으셨으면 해요. 지�
 
 async function sendToClaude(userText) {
   history.push({ role: 'user', content: userText });
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-5",
-      max_tokens: 1000,
-      // 대화가 길어질수록 이미 오간 부분은 캐시에서 90% 할인된 가격으로 읽어와요.
-      // 새로 추가된 메시지만 정가로 계산돼서, 턴이 쌓여도 비용이 폭증하지 않아요.
-      cache_control: { type: "ephemeral" },
-      system: [
-        { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }
-      ],
-      messages: history
-    })
+
+  // 테스트 기간 동안은 로그인 없이 바로 대화 가능하게 해요.
+  // (Edge Function 호출 자체는 공개 키로도 인증되니 로그인이 필수는 아니에요.)
+  const { data, error } = await sb.functions.invoke('olive-chat', {
+    body: { messages: history },
   });
-  const data = await response.json();
+
+  if (error) throw error;
+  if (data.error) throw new Error(data.error);
+
   const textBlock = (data.content || []).find(b => b.type === 'text');
   const text = textBlock ? textBlock.text : '(응답을 불러오지 못했어요)';
   history.push({ role: 'assistant', content: text });
@@ -304,10 +333,17 @@ function renderAiText(bubble, raw, isCrisis) {
   }
   bubble.innerHTML = escapeHtml(body).replace(/\n/g, '<br>') +
     (verse ? `<div class="verse-tag">📖 ${escapeHtml(verse)}</div>` : '');
+
+  // 음성으로 읽을 때는 전화번호 안내 블록 이모지 등은 자연스럽게 생략하고, 본문 + 출처만 읽어요.
+  return verse ? `${body} 관련 말씀은 ${verse} 입니다.` : body;
 }
 
 // initial greeting
+const GREETING_TEXT = '안녕하세요, 저는 올리브예요. 오늘 마음이 어떠셨는지, 편하게 이야기해주시겠어요?';
 addRow('ai', '안녕하세요, 저는 올리브예요 🫒<br>오늘 마음이 어떠셨는지, 편하게 이야기해주시겠어요?');
+setTimeout(() => speakText(GREETING_TEXT), 400); // 음성 목록 로딩 시간을 살짝 기다려요
+
+// (테스트 기간: 로그인 요구를 잠시 꺼뒀어요. 필요해지면 ensureSession()을 다시 호출하면 돼요.)
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -333,7 +369,8 @@ form.addEventListener('submit', async (e) => {
   const aiBubble = addRow('ai', '', true);
   try {
     const reply = await sendToClaude(text);
-    renderAiText(aiBubble, reply, risk === 'crisis');
+    const spokenText = renderAiText(aiBubble, reply, risk === 'crisis');
+    speakText(spokenText);
   } catch (err) {
     aiBubble.innerHTML = '잠시 연결이 원활하지 않아요. 다시 시도해주세요 🙏';
   }
@@ -346,6 +383,145 @@ input.addEventListener('keydown', (e) => {
     e.preventDefault();
     form.dispatchEvent(new Event('submit'));
   }
+});
+
+// ============ 음성 기능 (브라우저 내장 API, 별도 비용 없음) ============
+const micBtn = document.getElementById('micBtn');
+const voiceToggle = document.getElementById('voiceToggle');
+const wakeModeBtn = document.getElementById('wakeModeBtn');
+const wakeStatus = document.getElementById('wakeStatus');
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+let voiceEnabled = true;      // 올리브 답변을 음성으로 읽어줄지
+let wakeModeOn = false;       // "안녕 올리브" 웨이크워드 대기 모드 on/off
+let listeningState = 'idle';  // idle | wake | responding | capture
+let activeRecognition = null;
+
+const WAKE_PATTERNS = [/안녕\s*올리브/, /하이\s*올리브/, /헬로\s*올리브/, /올리브야/, /올리브\s*안녕/];
+
+if (!SpeechRecognitionAPI) {
+  micBtn.style.display = 'none';
+  wakeModeBtn.style.display = 'none';
+}
+
+// --- 음성 합성 (TTS) ---
+function pickFemaleKoreanVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  const korean = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('ko'));
+  const preferred = korean.find(v => /female|여성|유나|서현|지민|성연/i.test(v.name));
+  return preferred || korean[0] || null;
+}
+
+function speak(text, onEnd) {
+  if (!('speechSynthesis' in window) || !text) { if (onEnd) onEnd(); return; }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'ko-KR';
+  utter.rate = 0.92;
+  utter.pitch = 1.05;
+  const voice = pickFemaleKoreanVoice();
+  if (voice) utter.voice = voice;
+  if (onEnd) utter.onend = onEnd;
+  window.speechSynthesis.speak(utter);
+}
+
+// 올리브의 채팅 답변을 읽어줄 때 쓰는 함수 — 웨이크워드 모드면 다 읽은 뒤 다시 대기 상태로 돌아가요.
+function speakText(text) {
+  if (!voiceEnabled) { if (wakeModeOn) startWakeListening(); return; }
+  speak(text, () => { if (wakeModeOn) startWakeListening(); });
+}
+
+// --- 웨이크워드("안녕 올리브") 대기 듣기 ---
+function startWakeListening() {
+  if (!SpeechRecognitionAPI || !wakeModeOn) return;
+  listeningState = 'wake';
+  wakeModeBtn.classList.add('listening');
+  wakeStatus.textContent = '듣고 있어요...';
+
+  const rec = new SpeechRecognitionAPI();
+  activeRecognition = rec;
+  rec.lang = 'ko-KR';
+  rec.continuous = true;
+  rec.interimResults = true;
+
+  rec.onresult = (e) => {
+    const transcript = e.results[e.results.length - 1][0].transcript;
+    if (WAKE_PATTERNS.some(p => p.test(transcript))) {
+      listeningState = 'responding';
+      wakeModeBtn.classList.remove('listening');
+      wakeStatus.textContent = '';
+      try { rec.stop(); } catch (err) {}
+      speak('네, 말씀하세요', () => startCaptureListening());
+    }
+  };
+  rec.onerror = () => { /* 무음/네트워크 에러는 onend에서 재시작 처리하니 무시해요 */ };
+  rec.onend = () => {
+    // 브라우저가 일정 시간 뒤 자동으로 멈추는 경우가 있어서, 여전히 대기 모드면 다시 시작해요.
+    if (wakeModeOn && listeningState === 'wake') {
+      try { rec.start(); } catch (err) {}
+    }
+  };
+  try { rec.start(); } catch (err) {}
+}
+
+// --- 웨이크워드 감지 후, 실제 하고 싶은 말을 듣기 ---
+function startCaptureListening() {
+  listeningState = 'capture';
+  micBtn.classList.add('listening');
+
+  const rec = new SpeechRecognitionAPI();
+  activeRecognition = rec;
+  rec.lang = 'ko-KR';
+  rec.continuous = false;
+  rec.interimResults = false;
+
+  rec.onresult = (e) => {
+    input.value = e.results[0][0].transcript;
+    micBtn.classList.remove('listening');
+    listeningState = 'idle';
+    form.dispatchEvent(new Event('submit'));
+  };
+  rec.onerror = () => {
+    micBtn.classList.remove('listening');
+    listeningState = 'idle';
+    if (wakeModeOn) startWakeListening(); // 못 알아들었으면 다시 웨이크워드 대기로
+  };
+  rec.onend = () => { micBtn.classList.remove('listening'); };
+  try { rec.start(); } catch (err) {}
+}
+
+// --- 버튼 이벤트 ---
+wakeModeBtn.addEventListener('click', () => {
+  wakeModeOn = !wakeModeOn;
+  wakeModeBtn.textContent = wakeModeOn ? '👂 대기 중 (끄려면 클릭)' : '👂 "안녕 올리브"로 시작하기';
+  wakeModeBtn.classList.toggle('active', wakeModeOn);
+  if (wakeModeOn) {
+    startWakeListening();
+  } else {
+    listeningState = 'idle';
+    wakeStatus.textContent = '';
+    wakeModeBtn.classList.remove('listening');
+    if (activeRecognition) { try { activeRecognition.stop(); } catch (err) {} }
+    window.speechSynthesis.cancel();
+  }
+});
+
+micBtn.addEventListener('click', () => {
+  if (listeningState === 'capture') {
+    if (activeRecognition) { try { activeRecognition.stop(); } catch (err) {} }
+    micBtn.classList.remove('listening');
+    listeningState = wakeModeOn ? 'wake' : 'idle';
+    return;
+  }
+  if (listeningState !== 'idle') return; // 웨이크워드 응답 중 등 다른 작업 중이면 무시
+  startCaptureListening();
+});
+
+voiceToggle.addEventListener('click', () => {
+  voiceEnabled = !voiceEnabled;
+  voiceToggle.textContent = voiceEnabled ? '🔊' : '🔇';
+  voiceToggle.classList.toggle('muted', !voiceEnabled);
+  if (!voiceEnabled) window.speechSynthesis.cancel();
 });
 </script>
 </body>

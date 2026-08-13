@@ -171,14 +171,6 @@ const SUPABASE_URL = 'https://lovyadxzfsvccjknvrzz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_VYij2JgCTIEPkNgs-0rCmQ_Cq2r-XSf';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function ensureSession() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) return session;
-  const { data, error } = await sb.auth.signInAnonymously();
-  if (error) { console.error('익명 로그인 실패:', error); return null; }
-  return data.session;
-}
-
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
 function getThisWeekDates() {
@@ -199,7 +191,8 @@ function getThisWeekDates() {
 }
 
 async function loadWeekData() {
-  const session = await ensureSession();
+  // 테스트 기간: 로그인 안 되어있으면 로그인창을 띄우지 않고, 그냥 "기록 없음" 상태로 보여줘요.
+  const { data: { session } } = await sb.auth.getSession();
   const dates = getThisWeekDates();
   const todayStr = new Date().toISOString().slice(0, 10);
 
@@ -212,9 +205,8 @@ async function loadWeekData() {
       .in('logged_date', dates);
     if (error) { console.error(error); loadFailed = true; }
     else data.forEach(row => { logsByDate[row.logged_date] = row.mood_key; });
-  } else {
-    loadFailed = true;
   }
+  // session이 없어도 loadFailed는 true로 만들지 않아요 — 에러가 아니라 "아직 로그인 전"인 정상 상태예요.
 
   // 아직 기록이 없는 날은 화면이 비어보이지 않도록 'tired'(중립)로 표시하되,
   // 실제 집계(도넛차트 등)에서는 기록 없는 날은 제외해요.
