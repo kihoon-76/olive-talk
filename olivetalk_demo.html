@@ -498,8 +498,6 @@ function getRecognition() {
   if (recognition) return recognition;
   recognition = new SpeechRecognitionAPI();
   recognition.lang = 'ko-KR';
-  recognition.continuous = true;
-  recognition.interimResults = true;
 
   recognition.onresult = (e) => {
     const lastResult = e.results[e.results.length - 1];
@@ -511,7 +509,10 @@ function getRecognition() {
         wakeModeBtn.classList.remove('listening');
         wakeStatus.textContent = '';
         stopRecognitionSafely(); // "네, 말씀하세요"를 마이크가 다시 듣지 않도록 먼저 멈춰요.
-        speak('네, 말씀하세요', () => setListeningMode('capture'));
+        speak('네, 말씀하세요', () => {
+          // stop 직후 바로 start하면 브라우저가 못 알아듣는 경우가 있어서, 살짝 여유를 둬요.
+          setTimeout(() => setListeningMode('capture'), 250);
+        });
       }
     } else if (listeningState === 'capture' && lastResult.isFinal) {
       input.value = transcript;
@@ -521,7 +522,6 @@ function getRecognition() {
   };
 
   recognition.onerror = (e) => {
-    // 무음(no-speech)이나 일시적 네트워크 에러는 흔해서 무시하고 계속 듣게 둬요.
     if (e.error === 'not-allowed' || e.error === 'permission-denied') {
       wakeHelp.style.display = 'block';
       wakeHelp.textContent = '마이크 권한이 꺼져있어요. 브라우저 설정에서 마이크 허용으로 바꿔주세요.';
@@ -530,27 +530,39 @@ function getRecognition() {
       wakeModeBtn.classList.remove('active', 'listening');
       wakeModeBtn.textContent = '👂 "안녕 올리브"로 시작하기';
     }
+    // no-speech, network 같은 일시적 에러는 흔해서, onend에서 알아서 재시작하도록 둬요.
   };
 
   recognition.onend = () => {
     recognitionActive = false;
-    // 대기(wake) 상태를 유지해야 하는데 인식이 멈췄으면, 같은 객체로 바로 다시 시작해요.
+    // 대기 상태를 유지해야 하는데 인식이 멈췄으면, 같은 객체로 바로 다시 시작해요.
     // (매번 새로 만들지 않아서 권한을 또 묻지 않아요.)
-    if (wakeModeOn && (listeningState === 'wake' || listeningState === 'capture')) {
-      startRecognitionSafely();
+    if (wakeModeOn && listeningState === 'wake') {
+      startRecognitionSafely('wake');
+    } else if (listeningState === 'capture') {
+      // 캡처 중 아무 말도 못 들었으면(무음 타임아웃 등), 다시 한 번 듣기 시도해요.
+      startRecognitionSafely('capture');
     }
   };
 
   return recognition;
 }
 
-function startRecognitionSafely() {
+function startRecognitionSafely(mode, isRetry) {
   const rec = getRecognition();
   if (recognitionActive) return;
+  // 웨이크 대기는 계속 듣고 있어야 하니 연속 모드로, 실제 말 캡처는 한 번만 확실하게 듣도록 분리해요.
+  rec.continuous = (mode === 'wake');
+  rec.interimResults = (mode === 'wake');
   try {
     rec.start();
     recognitionActive = true;
-  } catch (err) { /* 이미 시작된 경우 등은 무시 */ }
+  } catch (err) {
+    // stop 직후 곧바로 start하면 가끔 에러가 나요 — 한 번만 살짝 기다렸다가 재시도해요.
+    if (!isRetry) {
+      setTimeout(() => startRecognitionSafely(mode, true), 350);
+    }
+  }
 }
 
 function stopRecognitionSafely() {
@@ -566,12 +578,12 @@ function setListeningMode(mode) {
     wakeModeBtn.classList.add('listening');
     micBtn.classList.remove('listening');
     wakeStatus.textContent = '듣고 있어요...';
-    startRecognitionSafely();
+    startRecognitionSafely('wake');
   } else if (mode === 'capture') {
     wakeModeBtn.classList.remove('listening');
     micBtn.classList.add('listening');
     wakeStatus.textContent = '지금 말씀하세요...';
-    startRecognitionSafely();
+    startRecognitionSafely('capture');
   } else { // idle
     wakeModeBtn.classList.remove('listening');
     micBtn.classList.remove('listening');
