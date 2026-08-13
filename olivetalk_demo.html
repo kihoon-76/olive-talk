@@ -487,10 +487,19 @@ function speak(text, onEnd) {
 }
 
 // 올리브의 채팅 답변을 읽어줄 때 쓰는 함수 — 웨이크워드 모드면 다 읽은 뒤 다시 대기 상태로 돌아가요.
+// 이모지는 음성으로 읽으면 어색해서, 말할 때만 걸러내요 (화면 표시는 그대로 둬요)
+function stripEmojiForSpeech(text) {
+  return text
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 function speakText(text) {
   stopRecognitionSafely(); // 올리브가 말하는 동안엔 마이크를 잠깐 꺼서, 자기 목소리를 다시 듣지 않게 해요.
+  const cleanText = stripEmojiForSpeech(text);
   if (!voiceEnabled) { if (wakeModeOn) setListeningMode('wake'); return; }
-  speak(text, () => { if (wakeModeOn) setListeningMode('wake'); });
+  speak(cleanText, () => { if (wakeModeOn) setListeningMode('wake'); });
 }
 
 // --- 마이크 권한은 최초 1회만 — 인식 객체를 새로 만들지 않고 계속 재사용해요 ---
