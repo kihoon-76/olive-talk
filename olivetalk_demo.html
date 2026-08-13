@@ -364,17 +364,30 @@ async function sendToClaude(userText) {
 
   // 테스트 기간 동안은 로그인 없이 바로 대화 가능하게 해요.
   // (Edge Function 호출 자체는 공개 키로도 인증되니 로그인이 필수는 아니에요.)
-  const { data, error } = await sb.functions.invoke('olive-chat', {
-    body: { messages: history },
-  });
+  let lastError = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data, error } = await sb.functions.invoke('olive-chat', {
+      body: { messages: history },
+    });
 
-  if (error) throw error;
-  if (data.error) throw new Error(data.error);
+    if (!error) {
+      if (data.error) throw new Error(data.error);
+      const textBlock = (data.content || []).find(b => b.type === 'text');
+      const text = textBlock ? textBlock.text : '(응답을 불러오지 못했어요)';
+      history.push({ role: 'assistant', content: text });
+      return text;
+    }
 
-  const textBlock = (data.content || []).find(b => b.type === 'text');
-  const text = textBlock ? textBlock.text : '(응답을 불러오지 못했어요)';
-  history.push({ role: 'assistant', content: text });
-  return text;
+    lastError = error;
+    // 529(서버 일시 과부하)일 때만 잠깐 기다렸다가 재시도해요. 다른 에러는 바로 포기해요.
+    const status = error?.context?.status;
+    if (status === 529 && attempt < 2) {
+      await new Promise(r => setTimeout(r, 1200 * (attempt + 1)));
+      continue;
+    }
+    break;
+  }
+  throw lastError;
 }
 
 function renderAiText(bubble, raw, isCrisis) {
