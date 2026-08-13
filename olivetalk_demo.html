@@ -2,6 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4E5F32">
 <title>올리브톡</title>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -18,7 +20,8 @@
     --bubble-ai: #FFFFFF;
     --border: #DDD3B8;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overscroll-behavior-y: contain; overflow-x: hidden; }
   body {
     margin: 0;
     background: var(--cream);
@@ -26,58 +29,62 @@
     color: var(--ink);
     display: flex;
     justify-content: center;
-    min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
   }
   .app {
     width: 100%;
     max-width: 480px;
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100dvh;
     background: linear-gradient(180deg, #FBF8EF 0%, var(--cream) 100%);
   }
   header {
-    padding: 18px 20px 14px;
+    padding: 16px 18px 12px;
     display: flex;
     align-items: center;
     gap: 12px;
     border-bottom: 1px solid var(--border);
     background: rgba(251,248,239,0.9);
+    flex-shrink: 0;
   }
   .avatar {
-    width: 46px;
-    height: 46px;
+    width: 50px;
+    height: 50px;
     flex-shrink: 0;
   }
   header .titles h1 {
     font-family: 'Gowun Batang', serif;
-    font-size: 19px;
+    font-size: 23px;
     margin: 0;
     color: var(--olive-deep);
     letter-spacing: -0.3px;
   }
   header .titles p {
-    margin: 2px 0 0;
-    font-size: 12px;
+    margin: 3px 0 0;
+    font-size: 15px;
     color: #8A7A5E;
   }
   .chat {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 16px;
+    -webkit-overflow-scrolling: touch;
+    padding: 18px 16px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
   }
   .row { display: flex; gap: 8px; align-items: flex-end; }
   .row.user { justify-content: flex-end; }
-  .row .avatar-sm { width: 28px; height: 28px; flex-shrink: 0; margin-bottom: 2px; }
+  .row .avatar-sm { width: 32px; height: 32px; flex-shrink: 0; margin-bottom: 2px; }
   .bubble {
-    max-width: 78%;
-    padding: 12px 15px;
-    border-radius: 16px;
-    font-size: 14.5px;
-    line-height: 1.6;
+    max-width: 82%;
+    padding: 14px 17px;
+    border-radius: 18px;
+    font-size: 19px;
+    line-height: 1.65;
     white-space: pre-wrap;
   }
   .row.ai .bubble {
@@ -92,12 +99,12 @@
   }
   .verse-tag {
     display: inline-block;
-    margin-top: 8px;
-    font-size: 12px;
+    margin-top: 10px;
+    font-size: 15px;
     color: var(--gold);
     font-weight: 500;
     border-top: 1px dashed var(--border);
-    padding-top: 6px;
+    padding-top: 8px;
     width: 100%;
   }
   .typing {
@@ -122,17 +129,18 @@
     padding: 12px 14px calc(env(safe-area-inset-bottom, 10px) + 10px);
     border-top: 1px solid var(--border);
     background: rgba(251,248,239,0.95);
+    flex-shrink: 0;
   }
   textarea {
     flex: 1;
     resize: none;
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 11px 14px;
+    padding: 13px 15px;
     font-family: 'Noto Sans KR', sans-serif;
-    font-size: 14.5px;
+    font-size: 18px;
     background: #fff;
-    max-height: 90px;
+    max-height: 100px;
     outline: none;
   }
   textarea:focus { border-color: var(--olive); }
@@ -141,23 +149,27 @@
     color: #FBF8EF;
     border: none;
     border-radius: 14px;
-    padding: 0 18px;
-    font-size: 14px;
-    font-weight: 500;
+    padding: 0 20px;
+    font-size: 17px;
+    font-weight: 600;
     cursor: pointer;
     font-family: 'Noto Sans KR', sans-serif;
+    touch-action: manipulation;
+    min-height: 50px;
   }
   button.send:disabled { opacity: 0.5; cursor: default; }
 
   .voice-toggle {
-    margin-left: auto; background: none; border: none; font-size: 19px; cursor: pointer;
-    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    margin-left: auto; background: none; border: none; font-size: 24px; cursor: pointer;
+    width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+    touch-action: manipulation;
   }
   .voice-toggle.muted { opacity: 0.4; }
 
   button.mic {
-    background: var(--card, #fff); border: 1px solid var(--border); color: var(--ink);
-    border-radius: 14px; width: 44px; flex-shrink: 0; font-size: 17px; cursor: pointer;
+    background: #fff; border: 1.5px solid var(--border); color: var(--ink);
+    border-radius: 14px; width: 52px; flex-shrink: 0; font-size: 22px; cursor: pointer;
+    touch-action: manipulation; min-height: 50px;
   }
   button.mic.listening {
     background: #E9CFC2; border-color: var(--walnut);
@@ -169,14 +181,16 @@
   }
 
   .wake-bar {
-    display: flex; align-items: center; gap: 8px;
-    padding: 8px 16px; border-bottom: 1px solid var(--border);
-    background: rgba(251,248,239,0.7);
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    background: rgba(251,248,239,0.85);
+    flex-shrink: 0;
   }
   .wake-mode-btn {
-    background: var(--card, #fff); border: 1px solid var(--border); color: var(--ink);
-    border-radius: 999px; padding: 7px 14px; font-size: 12.5px; cursor: pointer;
-    font-family: 'Noto Sans KR', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: #fff; border: 2px solid var(--olive-light); color: var(--olive-deep);
+    border-radius: 999px; padding: 13px 18px; font-size: 18px; font-weight: 700; cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif; width: 100%; touch-action: manipulation; min-height: 52px;
   }
   .wake-mode-btn.active {
     background: var(--olive-deep); color: #FBF8EF; border-color: var(--olive-deep);
@@ -184,12 +198,17 @@
   .wake-mode-btn.listening {
     animation: micPulse 1.2s ease-in-out infinite;
   }
-  .wake-status { font-size: 11.5px; color: var(--gold); }
+  .wake-status { font-size: 15px; color: var(--gold); text-align: center; min-height: 20px; font-weight: 600; }
+  .wake-help {
+    font-size: 15.5px; color: var(--walnut); text-align: center; line-height: 1.5;
+    background: #FBF0EC; border-radius: 10px; padding: 8px 10px;
+  }
   .disclaimer {
     text-align: center;
-    font-size: 11px;
+    font-size: 13px;
     color: #A69874;
     padding: 6px 20px 2px;
+    flex-shrink: 0;
   }
 </style>
 </head>
@@ -224,6 +243,7 @@
   <div class="wake-bar">
     <button id="wakeModeBtn" type="button" class="wake-mode-btn">👂 "안녕 올리브"로 시작하기</button>
     <span class="wake-status" id="wakeStatus"></span>
+    <p class="wake-help" id="wakeHelp">👆 위 버튼을 한 번 눌러주세요. "마이크 사용을 허용하시겠습니까?"라고 물어보면 <b>"허용"</b>을 눌러주세요. 그다음부턴 계속 "안녕 올리브"라고 부르시면 돼요.</p>
   </div>
 
   <div class="chat" id="chat"></div>
@@ -390,18 +410,21 @@ const micBtn = document.getElementById('micBtn');
 const voiceToggle = document.getElementById('voiceToggle');
 const wakeModeBtn = document.getElementById('wakeModeBtn');
 const wakeStatus = document.getElementById('wakeStatus');
+const wakeHelp = document.getElementById('wakeHelp');
 const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 let voiceEnabled = true;      // 올리브 답변을 음성으로 읽어줄지
 let wakeModeOn = false;       // "안녕 올리브" 웨이크워드 대기 모드 on/off
 let listeningState = 'idle';  // idle | wake | responding | capture
-let activeRecognition = null;
+let recognition = null;       // 마이크 권한 재요청을 막기 위해, 처음 한 번만 만들고 계속 재사용해요.
+let recognitionActive = false;
 
 const WAKE_PATTERNS = [/안녕\s*올리브/, /하이\s*올리브/, /헬로\s*올리브/, /올리브야/, /올리브\s*안녕/];
 
 if (!SpeechRecognitionAPI) {
   micBtn.style.display = 'none';
   wakeModeBtn.style.display = 'none';
+  wakeHelp.textContent = '이 브라우저는 음성 인식을 지원하지 않아요. 아래 입력창에 글씨로 적어주세요.';
 }
 
 // --- 음성 합성 (TTS) ---
@@ -427,67 +450,95 @@ function speak(text, onEnd) {
 
 // 올리브의 채팅 답변을 읽어줄 때 쓰는 함수 — 웨이크워드 모드면 다 읽은 뒤 다시 대기 상태로 돌아가요.
 function speakText(text) {
-  if (!voiceEnabled) { if (wakeModeOn) startWakeListening(); return; }
-  speak(text, () => { if (wakeModeOn) startWakeListening(); });
+  stopRecognitionSafely(); // 올리브가 말하는 동안엔 마이크를 잠깐 꺼서, 자기 목소리를 다시 듣지 않게 해요.
+  if (!voiceEnabled) { if (wakeModeOn) setListeningMode('wake'); return; }
+  speak(text, () => { if (wakeModeOn) setListeningMode('wake'); });
 }
 
-// --- 웨이크워드("안녕 올리브") 대기 듣기 ---
-function startWakeListening() {
-  if (!SpeechRecognitionAPI || !wakeModeOn) return;
-  listeningState = 'wake';
-  wakeModeBtn.classList.add('listening');
-  wakeStatus.textContent = '듣고 있어요...';
+// --- 마이크 권한은 최초 1회만 — 인식 객체를 새로 만들지 않고 계속 재사용해요 ---
+function getRecognition() {
+  if (recognition) return recognition;
+  recognition = new SpeechRecognitionAPI();
+  recognition.lang = 'ko-KR';
+  recognition.continuous = true;
+  recognition.interimResults = true;
 
-  const rec = new SpeechRecognitionAPI();
-  activeRecognition = rec;
-  rec.lang = 'ko-KR';
-  rec.continuous = true;
-  rec.interimResults = true;
+  recognition.onresult = (e) => {
+    const lastResult = e.results[e.results.length - 1];
+    const transcript = lastResult[0].transcript;
 
-  rec.onresult = (e) => {
-    const transcript = e.results[e.results.length - 1][0].transcript;
-    if (WAKE_PATTERNS.some(p => p.test(transcript))) {
-      listeningState = 'responding';
-      wakeModeBtn.classList.remove('listening');
-      wakeStatus.textContent = '';
-      try { rec.stop(); } catch (err) {}
-      speak('네, 말씀하세요', () => startCaptureListening());
+    if (listeningState === 'wake') {
+      if (WAKE_PATTERNS.some(p => p.test(transcript))) {
+        listeningState = 'responding';
+        wakeModeBtn.classList.remove('listening');
+        wakeStatus.textContent = '';
+        stopRecognitionSafely(); // "네, 말씀하세요"를 마이크가 다시 듣지 않도록 먼저 멈춰요.
+        speak('네, 말씀하세요', () => setListeningMode('capture'));
+      }
+    } else if (listeningState === 'capture' && lastResult.isFinal) {
+      input.value = transcript;
+      setListeningMode('idle');
+      form.dispatchEvent(new Event('submit'));
     }
   };
-  rec.onerror = () => { /* 무음/네트워크 에러는 onend에서 재시작 처리하니 무시해요 */ };
-  rec.onend = () => {
-    // 브라우저가 일정 시간 뒤 자동으로 멈추는 경우가 있어서, 여전히 대기 모드면 다시 시작해요.
-    if (wakeModeOn && listeningState === 'wake') {
-      try { rec.start(); } catch (err) {}
+
+  recognition.onerror = (e) => {
+    // 무음(no-speech)이나 일시적 네트워크 에러는 흔해서 무시하고 계속 듣게 둬요.
+    if (e.error === 'not-allowed' || e.error === 'permission-denied') {
+      wakeHelp.style.display = 'block';
+      wakeHelp.textContent = '마이크 권한이 꺼져있어요. 브라우저 설정에서 마이크 허용으로 바꿔주세요.';
+      wakeModeOn = false;
+      listeningState = 'idle';
+      wakeModeBtn.classList.remove('active', 'listening');
+      wakeModeBtn.textContent = '👂 "안녕 올리브"로 시작하기';
     }
   };
-  try { rec.start(); } catch (err) {}
+
+  recognition.onend = () => {
+    recognitionActive = false;
+    // 대기(wake) 상태를 유지해야 하는데 인식이 멈췄으면, 같은 객체로 바로 다시 시작해요.
+    // (매번 새로 만들지 않아서 권한을 또 묻지 않아요.)
+    if (wakeModeOn && (listeningState === 'wake' || listeningState === 'capture')) {
+      startRecognitionSafely();
+    }
+  };
+
+  return recognition;
 }
 
-// --- 웨이크워드 감지 후, 실제 하고 싶은 말을 듣기 ---
-function startCaptureListening() {
-  listeningState = 'capture';
-  micBtn.classList.add('listening');
+function startRecognitionSafely() {
+  const rec = getRecognition();
+  if (recognitionActive) return;
+  try {
+    rec.start();
+    recognitionActive = true;
+  } catch (err) { /* 이미 시작된 경우 등은 무시 */ }
+}
 
-  const rec = new SpeechRecognitionAPI();
-  activeRecognition = rec;
-  rec.lang = 'ko-KR';
-  rec.continuous = false;
-  rec.interimResults = false;
+function stopRecognitionSafely() {
+  if (recognition && recognitionActive) {
+    try { recognition.stop(); } catch (err) {}
+  }
+}
 
-  rec.onresult = (e) => {
-    input.value = e.results[0][0].transcript;
+// listeningState를 바꾸고, 그에 맞는 화면 표시 + 인식 시작을 한 번에 처리해요.
+function setListeningMode(mode) {
+  listeningState = mode;
+  if (mode === 'wake') {
+    wakeModeBtn.classList.add('listening');
     micBtn.classList.remove('listening');
-    listeningState = 'idle';
-    form.dispatchEvent(new Event('submit'));
-  };
-  rec.onerror = () => {
+    wakeStatus.textContent = '듣고 있어요...';
+    startRecognitionSafely();
+  } else if (mode === 'capture') {
+    wakeModeBtn.classList.remove('listening');
+    micBtn.classList.add('listening');
+    wakeStatus.textContent = '지금 말씀하세요...';
+    startRecognitionSafely();
+  } else { // idle
+    wakeModeBtn.classList.remove('listening');
     micBtn.classList.remove('listening');
-    listeningState = 'idle';
-    if (wakeModeOn) startWakeListening(); // 못 알아들었으면 다시 웨이크워드 대기로
-  };
-  rec.onend = () => { micBtn.classList.remove('listening'); };
-  try { rec.start(); } catch (err) {}
+    wakeStatus.textContent = '';
+  }
 }
 
 // --- 버튼 이벤트 ---
@@ -495,26 +546,24 @@ wakeModeBtn.addEventListener('click', () => {
   wakeModeOn = !wakeModeOn;
   wakeModeBtn.textContent = wakeModeOn ? '👂 대기 중 (끄려면 클릭)' : '👂 "안녕 올리브"로 시작하기';
   wakeModeBtn.classList.toggle('active', wakeModeOn);
+  wakeHelp.style.display = wakeModeOn ? 'none' : 'block'; // 켜지면 안내문은 접어서 화면을 덜 복잡하게
   if (wakeModeOn) {
-    startWakeListening();
+    setListeningMode('wake');
   } else {
-    listeningState = 'idle';
-    wakeStatus.textContent = '';
-    wakeModeBtn.classList.remove('listening');
-    if (activeRecognition) { try { activeRecognition.stop(); } catch (err) {} }
+    setListeningMode('idle');
+    stopRecognitionSafely();
     window.speechSynthesis.cancel();
   }
 });
 
 micBtn.addEventListener('click', () => {
   if (listeningState === 'capture') {
-    if (activeRecognition) { try { activeRecognition.stop(); } catch (err) {} }
-    micBtn.classList.remove('listening');
-    listeningState = wakeModeOn ? 'wake' : 'idle';
+    stopRecognitionSafely();
+    setListeningMode(wakeModeOn ? 'wake' : 'idle');
     return;
   }
   if (listeningState !== 'idle') return; // 웨이크워드 응답 중 등 다른 작업 중이면 무시
-  startCaptureListening();
+  setListeningMode('capture');
 });
 
 voiceToggle.addEventListener('click', () => {
